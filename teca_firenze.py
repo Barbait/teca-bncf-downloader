@@ -76,7 +76,11 @@ class Book:
         return soup
 
     def download_image(self, url, img_path):
-        urllib.request.urlretrieve(url, img_path)
+        r = requests.get(url, stream=True)
+        if r.status_code == 200:
+            with open(img_path, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
 
     def download_book(self, list):
         for index, url in enumerate(list):
@@ -110,21 +114,20 @@ titolo = input("Incolla il titolo del libro...")
 
 book = Book(link, titolo)
 
-try:
-    link_list = book.get_link_list()
-    book.start_download(link_list, book.label)
 
-    pdfpath = os.path.join(os.getcwd(), "PDFs")
-    if not os.path.exists(pdfpath):
-        os.makedirs(pdfpath)
+link_list = book.get_link_list()
+book.start_download(link_list, book.label)
 
-    book.makePdf(pdfpath)
+pdfpath = os.path.join(os.getcwd(), "PDFs")
+if not os.path.exists(pdfpath):
+    os.makedirs(pdfpath)
 
-    print(f"##################################\n"
-          f"####  Titolo: {book.label}\n"
-          f"####  Scaricato con successo\n"
-          f"##################################\n")
-except:
-    print(f"Un errore ha impedito di scaricare {book.label}")
+book.makePdf(pdfpath)
+
+print(f"##################################\n"
+      f"####  Titolo: {book.label}\n"
+      f"####  Scaricato con successo\n"
+      f"##################################\n")
+
 
 shutil.rmtree(temp_path)
