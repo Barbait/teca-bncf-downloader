@@ -1,14 +1,10 @@
 import shutil
-import urllib.request
-from fpdf import FPDF
-from PIL import Image
 import requests
-import json
 import os
-from os import listdir
 from os.path import isfile, join
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
+import img2pdf
 
 
 class Book:
@@ -16,9 +12,8 @@ class Book:
         self.temp_path = self.make_temp_path()
         self.url = book_url
         self.soup = self.get_json_details()
-
-
         self.label = titolo
+        self.book_temp_path = self.make_book_temp_path()
         self.imgs_path = self.make_book_temp_path()
 
     def make_img_path(self, index, book_img_path):
@@ -43,27 +38,23 @@ class Book:
 
     def make_book_temp_path(self):
         bookpath = os.path.join(temp_path, f"{self.label}")
+
         if not os.path.exists(bookpath):
             os.makedirs(bookpath)
         return bookpath
 
-    def makePdf(self, pdfpath):
+    def makePdf(self,pdfpath):
         Pages = [f for f in os.listdir(self.imgs_path) if isfile(join(self.imgs_path, f))]
-        listPages = tqdm(Pages, "Creando PDF  ", unit="Pagina", leave=False)
         if Pages:
-            pdfpdf_file_path = os.path.join(pdfpath, f"{self.label}.pdf")
+            pagelist = []
+            for page in Pages:
+                pagepath = os.path.join(self.book_temp_path, page)
+                pagelist.append(pagepath)
 
-            coverimage = os.path.join(self.imgs_path, Pages[0])
-            cover = Image.open(coverimage)
-            width, height = cover.size
-
-            pdf = FPDF(unit="pt", format=[width, height])
-
-            for page in listPages:
-                pdf.add_page()
-                pdf.image(os.path.join(self.imgs_path, page), 0, 0)
-
-            pdf.output(pdfpdf_file_path, "F")
+            pagelist = sorted(pagelist)
+            pdf = os.path.join(pdfpath, f"{self.label}.pdf")
+            with open(pdf, "wb") as f:
+                f.write(img2pdf.convert(pagelist))
 
     def get_json_details(self):
         book_id = self.url.split('=')[-1:][0]
@@ -108,11 +99,10 @@ if not os.path.exists(temp_path):
     os.makedirs(temp_path)
 
 
-link = input("Incolla il link del libro...")
-titolo = input("Incolla il titolo del libro...")
+link = input("Incolla il link del libro...\n")
+titolo = input("Scrivi il titolo del libro...\n")
 
 book = Book(link, titolo)
-
 
 link_list = book.get_link_list()
 book.start_download(link_list, book.label)
@@ -122,11 +112,8 @@ if not os.path.exists(pdfpath):
     os.makedirs(pdfpath)
 
 book.makePdf(pdfpath)
-
-print(f"##################################\n"
+shutil.rmtree(temp_path)
+input(f"##################################\n"
       f"####  Titolo: {book.label}\n"
       f"####  Scaricato con successo\n"
       f"##################################\n")
-
-
-shutil.rmtree(temp_path)
