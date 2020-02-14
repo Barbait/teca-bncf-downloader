@@ -66,7 +66,6 @@ class Book:
             pdf.output(pdfpdf_file_path, "F")
 
     def get_json_details(self):
-        self.url = "https://teca.bncf.firenze.sbn.it/ImageViewer/servlet/ImageViewer?idr=BNCF0003862255"
         book_id = self.url.split('=')[-1:][0]
         manifest_xml = f'https://teca.bncf.firenze.sbn.it/ImageViewer/servlet/ImageViewer?idr={book_id}&azione=readBook'
 
